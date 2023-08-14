@@ -1,0 +1,59 @@
+From: Sebastian Ramacher <sramacher@debian.org>
+Date: Mon, 19 Nov 2018 22:35:07 +0100
+Subject: Integrate unit tests in cmake's test framework
+
+---
+ CMakeLists.txt                                |  1 +
+ media_driver/linux/ult/CMakeLists.txt         |  7 -------
+ media_driver/linux/ult/ult_app/CMakeLists.txt | 12 ++++--------
+ 3 files changed, 5 insertions(+), 15 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 72b5120..ea1e6e9 100755
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -78,6 +78,7 @@ if (BUILD_KERNELS)
+     add_subdirectory(Tools/MediaDriverTools)
+ endif()
+ 
++enable_testing()
+ add_subdirectory(media_driver)
+ 
+ if("${LIBVA_DRIVERS_PATH}" STREQUAL "")
+diff --git a/media_driver/linux/ult/CMakeLists.txt b/media_driver/linux/ult/CMakeLists.txt
+index 9fb5b39..4f54575 100644
+--- a/media_driver/linux/ult/CMakeLists.txt
++++ b/media_driver/linux/ult/CMakeLists.txt
+@@ -51,10 +51,3 @@ endif ()
+ 
+ add_subdirectory(libdrm_mock)
+ add_subdirectory(ult_app)
+-
+-enable_testing()
+-add_test(NAME test_devult COMMAND devult ${UMD_PATH})
+-set_tests_properties(test_devult
+-    PROPERTIES PASS_REGULAR_EXPRESSION "PASS")
+-set_tests_properties(test_devult
+-    PROPERTIES FAIL_REGULAR_EXPRESSION "FAIL")
+diff --git a/media_driver/linux/ult/ult_app/CMakeLists.txt b/media_driver/linux/ult/ult_app/CMakeLists.txt
+index 6ffb61d..825c1ac 100644
+--- a/media_driver/linux/ult/ult_app/CMakeLists.txt
++++ b/media_driver/linux/ult/ult_app/CMakeLists.txt
+@@ -74,13 +74,9 @@ if (DEFINED BYPASS_MEDIA_ULT AND "${BYPASS_MEDIA_ULT}" STREQUAL "yes")
+     message("-- media -- BYPASS_MEDIA_ULT = ${BYPASS_MEDIA_ULT}")
+ else ()
+     if (ENABLE_NONFREE_KERNELS)
+-        add_custom_target(RunULT ALL DEPENDS ${LIB_NAME} devult)
+-
+-        add_custom_command(
+-            TARGET RunULT
+-            POST_BUILD
+-            COMMAND LD_PRELOAD=../libdrm_mock/libdrm_mock.so ./devult ../../../${LIB_NAME}.so
+-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+-            COMMENT "Running devult...")
++        add_test(
++            NAME ULT
++            COMMAND env LD_PRELOAD=$<TARGET_FILE:drm_mock> $<TARGET_FILE:devult> ../../../${LIB_NAME}.so
++        )
+         endif ()
+ endif ()
